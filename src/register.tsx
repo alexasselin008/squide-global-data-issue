@@ -32,6 +32,6 @@ export const registerHost: ModuleRegisterFunction<FireflyRuntime, unknown, Defer
   });
 
   return (deferredRuntime, context) => {
-        console.log("DeferredRegistrations: registerHost reacting to changes", context.workspaceId);
+        console.log("DeferredRegistrations: registerHost deferred", context.workspaceId);
   }
 };

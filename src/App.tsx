@@ -1,5 +1,5 @@
 import { AppRouter, useDeferredRegistrations, useIsBootstrapping, useProtectedDataQueries } from '@squide/firefly';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createBrowserRouter, Outlet } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 import { WorkspaceProvider, type SgWorkspace } from './WorkspaceContext';
@@ -7,33 +7,12 @@ export interface DeferredRegistrationData {
     workspaceId?: string;
 }
 
-
-function useCurrentWorkspace(workspaces: SgWorkspace[]) {
-    const defaultWorkspace = workspaces.length > 0 ? workspaces[0]: null;
-    const [currentWorkspace, setCurrentWorkspace] = useState<SgWorkspace | null>(defaultWorkspace);
-
-    const changeWorkspace = useCallback((workspace: SgWorkspace) => {
-        if (currentWorkspace?.id !== workspace.id) {
-            setCurrentWorkspace(workspace);
-        }
-    }, [currentWorkspace?.id]);
-
-    useEffect(() => {
-        // Sync when workspace from url/local storage changes
-        setCurrentWorkspace(defaultWorkspace);
-    }, [defaultWorkspace]);
-
-    return useMemo(() => ({ currentWorkspace, changeWorkspace }), [currentWorkspace, changeWorkspace]);
-}
-
 function BootstrappingRoute() {
-    const [workspaces, setWorkspaces] = useState<SgWorkspace[]>([]);
-    const { currentWorkspace, changeWorkspace } = useCurrentWorkspace(workspaces);
+    const [currentWorkspace, setCurrentWorkspace] = useState<SgWorkspace | null>(null);
 
-    const [workspacesResponse] = useProtectedDataQueries(
+    const [workspaces,] = useProtectedDataQueries(
         [
             {
-                // queryKey: ["workspaces", currentWorkspace?.id], Adding this makes the deferredRegistration work
                 queryKey: ["workspaces"],
                 queryFn: () =>
                     ([
@@ -41,20 +20,25 @@ function BootstrappingRoute() {
                         {id: "workspace-2", name: "Workspace 2"},
                         {id: "workspace-3", name: "Workspace 3"}
                     ])
-            }
+            },
+             // Adding this makes the deferredRegistration work
+            // {
+            //     queryKey: ["workspaceDetails", currentWorkspace?.id],
+            //     gcTime: 0,
+            //     queryFn: () => {
+            //         return {}
+            //     }
+            // }
         ],
         () => false
     );
 
     useEffect(() => {
-        if (workspacesResponse) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setWorkspaces(workspacesResponse);
-        }
-    }, [workspacesResponse]);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setCurrentWorkspace(workspaces?.[0] || null);
+    }, [workspaces]);
 
-
-    const data: DeferredRegistrationData   = useMemo(() => {
+    const data: DeferredRegistrationData = useMemo(() => {
         console.log("DeferredRegistrations: usememo setting the workspaceId", currentWorkspace?.id);
         return {
             workspaceId: currentWorkspace?.id
@@ -69,8 +53,8 @@ function BootstrappingRoute() {
 
   return (
         <WorkspaceProvider value={{
-            changeWorkspace,
-            workspaces,
+            changeWorkspace: setCurrentWorkspace,
+            workspaces: workspaces || [],
             currentWorkspace
         }}>
             <Outlet />
