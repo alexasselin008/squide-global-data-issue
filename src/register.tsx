@@ -1,14 +1,14 @@
 import {
-  PublicRoutes,
-  ProtectedRoutes,
-  type ModuleRegisterFunction,
-  type FireflyRuntime,
+    ProtectedRoutes,
+    PublicRoutes,
+    type FireflyRuntime,
+    type ModuleRegisterFunction,
 } from '@squide/firefly';
+import type { DeferredRegistrationData } from './App.tsx';
 import { HomePage } from './HomePage.tsx';
 import { RootLayout } from './RootLayout.tsx';
-import { http, HttpResponse } from 'msw';
 
-export const registerHost: ModuleRegisterFunction<FireflyRuntime> = (
+export const registerHost: ModuleRegisterFunction<FireflyRuntime, unknown, DeferredRegistrationData> = (
   runtime
 ) => {
   runtime.registerRoute(
@@ -26,21 +26,12 @@ export const registerHost: ModuleRegisterFunction<FireflyRuntime> = (
     }
   );
 
-  runtime.registerRequestHandlers([
-    http.get('/api/me', () => HttpResponse.json({ name: 'John Smith' })),
-  ]);
-
   runtime.registerRoute({
     index: true,
-    async loader() {
-      await wait(0); // If we add a delay here, everything works fine.
-      const response = await fetch("/api/me");
-      return response.json();
-    },
     element: <HomePage />,
   });
-};
 
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+  return (deferredRuntime, context) => {
+        console.log("DeferredRegistrations: registerHost reacting to changes", context.workspaceId);
+  }
+};

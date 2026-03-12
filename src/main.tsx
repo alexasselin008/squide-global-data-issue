@@ -1,22 +1,27 @@
-import { createRoot } from 'react-dom/client';
 import { FireflyProvider, initializeFirefly } from '@squide/firefly';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
 import { registerHost } from './register.tsx';
 
 const runtime = initializeFirefly({
-  useMsw: true,
   localModules: [registerHost],
-  startMsw: async (x) => {
-    // Files that includes an import to the "msw" package are included dynamically to prevent adding
-    // unused MSW stuff to the code bundles.
-    return (await import('./mocks/browser.ts')).startMsw(x.requestHandlers);
-  },
+});
+
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            refetchOnWindowFocus: false
+        }
+    }
 });
 
 const root = createRoot(document.getElementById('root')!);
 
 root.render(
   <FireflyProvider runtime={runtime}>
-    <App />
+    <QueryClientProvider client={queryClient}>
+        <App />
+    </QueryClientProvider>
   </FireflyProvider>
 );
